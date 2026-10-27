@@ -1,6 +1,8 @@
 // Academic ERP API Client with Real Backend Persistence & Role-Based Security
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`
+  : '/api';
 
 export const getAuthToken = () => localStorage.getItem('token');
 export const setAuthToken = (token) => {
