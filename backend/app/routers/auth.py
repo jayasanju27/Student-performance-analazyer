@@ -23,6 +23,7 @@ from datetime import datetime
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 @router.post("/login", response_model=Token)
+@router.post("/login/", response_model=Token, include_in_schema=False)
 def login(creds: LoginRequest, db: Session = Depends(get_db)):
     # Look up user by email or by Student Register Number
     user = None
@@ -176,6 +177,14 @@ def login(creds: LoginRequest, db: Session = Depends(get_db)):
         "department_code": dept_code,
         "must_change_password": user.must_change_password,
     }
+
+@router.get("/login", include_in_schema=False)
+@router.get("/login/", include_in_schema=False)
+def login_get():
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="Login requires an HTTP POST request with username and password in JSON body. If your browser sent GET, a redirect (e.g. http to https) or direct navigation converted the request."
+    )
 
 @router.get("/me", response_model=UserOut)
 def get_profile(current_user: User = Depends(get_current_user)):

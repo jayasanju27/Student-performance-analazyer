@@ -1,8 +1,17 @@
 // Academic ERP API Client with Real Backend Persistence & Role-Based Security
 
-const API_BASE = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`
-  : '/api';
+const resolveApiBase = () => {
+  let envUrl = (import.meta.env.VITE_API_URL || '').trim();
+  if (!envUrl) return '/api';
+  // If user entered http:// for a remote host, upgrade to https to prevent 301 POST->GET downgrade
+  if (envUrl.startsWith('http://') && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+    envUrl = envUrl.replace(/^http:\/\//, 'https://');
+  }
+  const clean = envUrl.replace(/\/+$/, '');
+  return clean.endsWith('/api') ? clean : `${clean}/api`;
+};
+
+const API_BASE = resolveApiBase();
 
 export const getAuthToken = () => localStorage.getItem('token');
 export const setAuthToken = (token) => {
@@ -53,7 +62,9 @@ async function request(endpoint, options = {}) {
       const errorJson = await response.json();
       errorDetail = errorJson.detail || errorDetail;
     } catch {
-      // Non-JSON response
+      if (response.status === 405) {
+        errorDetail = 'HTTP 405 (Method Not Allowed): The API endpoint rejected the request method. If deployed on Vercel, ensure VITE_API_URL is configured in your project settings pointing to your live backend server (static frontend hosts cannot process POST requests).';
+      }
     }
     throw new Error(errorDetail);
   }
